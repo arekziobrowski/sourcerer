@@ -2,16 +2,11 @@ package source
 
 import (
 	"fmt"
-	"os/user"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
-	"github.com/go-git/go-billy/v5/memfs"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/pkg/errors"
 )
 
@@ -27,71 +22,80 @@ func NewGitDownloader(wd string) *GitDownloader {
 
 func (g *GitDownloader) Get(src string) error {
 	const remoteName = "origin"
-	origin, hash, err := extractOriginAndHash(src)
-	if err != nil {
-		return err
-	}
-	storage := memory.NewStorage()
-	fs := memfs.New()
-	repo, err := git.Init(storage, fs)
-	if err != nil {
-		return errors.Wrap(err, "failed to init repo")
+	origin, hash, perr := extractOriginAndHash(src)
+	if perr != nil {
+		return perr
 	}
 
-	remote, err := repo.CreateRemote(&config.RemoteConfig{
-		Name: remoteName,
-		URLs: []string{origin},
-	})
-	if err != nil {
-		return errors.Wrapf(err, "failed to invoke 'git remote add %s %s'", remoteName, origin)
+	org, repoName := extractOrganizationAndRepo(origin)
+	destinationDir := filepath.Join(g.workingDirectory, org, repoName)
+
+	perr = g.prepare(destinationDir)
+	if perr != nil {
+		return errors.Wrapf(perr, "unable to prepare the directory tree for %q", destinationDir)
 	}
 
-	sshAuth := getSshKeyAuth()
-	err = remote.Fetch(&git.FetchOptions{
-		RemoteName: remoteName + " " + hash, // TODO: add hash
-		Auth:       sshAuth,
-		Depth:      1,
-	})
+	var err error
+	defer g.cleanUpIfError(err, destinationDir)
+
+	err = g.initialize(destinationDir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to invoke 'git fetch %s %s --depth=1'", remoteName, hash)
+		return errors.Wrap(err, "failed to initialize the repository")
 	}
 
-	workTree, err := repo.Worktree()
+	err = g.remoteAdd(remoteName, origin, destinationDir)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to add remote for %s", origin)
 	}
 
-	/*fetchHead, err := repo.Reference(plumbing.ReferenceName("FETCH_HEAD"), true)
+	err = g.fetch(remoteName, hash, destinationDir)
 	if err != nil {
-		return errors.Wrap(err, "failed to resolve FETCH_HEAD reference")
-	}*/
+		return errors.Wrapf(err, "failed to fetch from remote for revision: %s", hash)
+	}
 
-	refs, _ := repo.References()
-	refs.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Type() == plumbing.HashReference {
-			fmt.Println(ref)
-		}
+	err = g.reset(destinationDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to reset to FETCH_HEAD")
+	}
 
+	return nil
+}
+
+func (g *GitDownloader) prepare(path string) error {
+	return os.MkdirAll(path, 0777)
+}
+
+func (g *GitDownloader) cleanUpIfError(err error, dir string) error {
+	if err != nil {
+		fmt.Println("removing", dir)
 		return nil
-	})
-
-	h, err := repo.ResolveRevision(plumbing.Revision(hash))
-	fmt.Println(h)
-
-	/*	head, err := repo.Head()
-		if err != nil {
-			return errors.Wrap(err, "failed to resolve HEAD reference")
-		}*/
-
-	err = workTree.Reset(&git.ResetOptions{
-		Commit: plumbing.NewHash(hash),
-		Mode:   git.HardReset,
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "failed to invoke 'git reset --hard FETCH_HEAD'")
+		//return os.RemoveAll(dir)
 	}
 	return nil
+}
+
+func (g *GitDownloader) initialize(wd string) error {
+	cmd := exec.Command("git", "init")
+	cmd.Dir = wd
+	return cmd.Run()
+}
+
+func (g *GitDownloader) remoteAdd(originName, remote, wd string) error {
+	cmd := exec.Command("git", "remote", "add", originName, remote)
+	cmd.Dir = wd
+	return cmd.Run()
+}
+
+func (g *GitDownloader) fetch(originName, hash, wd string) error {
+	cmd := exec.Command("git", "fetch", originName, hash, "--depth=1")
+	cmd.Dir = wd
+	return cmd.Run()
+}
+
+func (g *GitDownloader) reset(wd string) error {
+	cmd := exec.Command("git", "reset", "FETCH_HEAD", "--hard")
+	cmd.Dir = wd
+	return cmd.Run()
 }
 
 func extractOriginAndHash(src string) (string, string, error) {
@@ -102,8 +106,8 @@ func extractOriginAndHash(src string) (string, string, error) {
 	return split[0], split[1], nil
 }
 
-func getSshKeyAuth() transport.AuthMethod {
-	usr, _ := user.Current()
-	auth, _ := ssh.NewPublicKeysFromFile("git", usr.HomeDir+"/.ssh/id_rsa", "")
-	return auth
+func extractOrganizationAndRepo(origin string) (string, string) {
+	organizationAndRepo := strings.TrimSuffix(strings.Split(origin, ":")[1], ".git")
+	split := strings.Split(organizationAndRepo, "/")
+	return split[0], split[1]
 }
