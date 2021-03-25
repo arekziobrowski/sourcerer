@@ -1,6 +1,7 @@
 package source
 
 import (
+	"fmt"
 	"os/user"
 	"strings"
 
@@ -47,7 +48,7 @@ func (g *GitDownloader) Get(src string) error {
 
 	sshAuth := getSshKeyAuth()
 	err = remote.Fetch(&git.FetchOptions{
-		RemoteName: remoteName, // TODO: add hash
+		RemoteName: remoteName + " " + hash, // TODO: add hash
 		Auth:       sshAuth,
 		Depth:      1,
 	})
@@ -60,13 +61,30 @@ func (g *GitDownloader) Get(src string) error {
 		return err
 	}
 
-	fetchHead, err := repo.Reference(plumbing.ReferenceName("FETCH_HEAD"), true)
+	/*fetchHead, err := repo.Reference(plumbing.ReferenceName("FETCH_HEAD"), true)
 	if err != nil {
 		return errors.Wrap(err, "failed to resolve FETCH_HEAD reference")
-	}
+	}*/
+
+	refs, _ := repo.References()
+	refs.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Type() == plumbing.HashReference {
+			fmt.Println(ref)
+		}
+
+		return nil
+	})
+
+	h, err := repo.ResolveRevision(plumbing.Revision(hash))
+	fmt.Println(h)
+
+	/*	head, err := repo.Head()
+		if err != nil {
+			return errors.Wrap(err, "failed to resolve HEAD reference")
+		}*/
 
 	err = workTree.Reset(&git.ResetOptions{
-		Commit: fetchHead.Hash(),
+		Commit: plumbing.NewHash(hash),
 		Mode:   git.HardReset,
 	})
 
