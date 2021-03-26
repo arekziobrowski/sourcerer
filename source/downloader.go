@@ -2,6 +2,8 @@ package source
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -30,10 +32,16 @@ func New(dst string, withDependencies bool, strict bool) *service {
 
 func (s *service) GetSources(list []string) error {
 	eg, _ := errgroup.WithContext(context.Background())
+	fmt.Println(list)
 	for _, src := range list {
+		src := src
 		eg.Go(func() error {
+			log.Println("Downloading", src)
 			err := s.sourceDownloader.Get(src)
-			return err
+			if err != nil {
+				return err
+			}
+			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -43,9 +51,5 @@ func (s *service) GetSources(list []string) error {
 }
 
 func downloadDependency() {
-
-}
-
-func setupDirectory() {
 
 }

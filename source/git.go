@@ -1,7 +1,9 @@
 package source
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,7 +42,7 @@ func (g *GitDownloader) Get(src string) error {
 
 	err = g.initialize(destinationDir)
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize the repository")
+		return errors.Wrapf(err, "failed to initialize the repository: %s", src)
 	}
 
 	err = g.remoteAdd(remoteName, origin, destinationDir)
@@ -75,27 +77,32 @@ func (g *GitDownloader) cleanUpIfError(err error, dir string) error {
 }
 
 func (g *GitDownloader) initialize(wd string) error {
-	cmd := exec.Command("git", "init")
-	cmd.Dir = wd
-	return cmd.Run()
+	return run(wd, "git", "init")
 }
 
 func (g *GitDownloader) remoteAdd(originName, remote, wd string) error {
-	cmd := exec.Command("git", "remote", "add", originName, remote)
-	cmd.Dir = wd
-	return cmd.Run()
+	return run(wd, "git", "remote", "add", originName, remote)
 }
 
 func (g *GitDownloader) fetch(originName, hash, wd string) error {
-	cmd := exec.Command("git", "fetch", originName, hash, "--depth=1")
-	cmd.Dir = wd
-	return cmd.Run()
+	return run(wd, "git", "fetch", originName, hash, "--depth=1")
 }
 
 func (g *GitDownloader) reset(wd string) error {
-	cmd := exec.Command("git", "reset", "FETCH_HEAD", "--hard")
+	return run(wd, "git", "reset", "FETCH_HEAD", "--hard")
+}
+
+func run(wd, command string, args ...string) error {
+	cmd := exec.Command(command, args...)
 	cmd.Dir = wd
-	return cmd.Run()
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Error occured when running %q: %s", command+" "+strings.Join(args, " "), stderr)
+		return err
+	}
+	return nil
 }
 
 func extractOriginAndHash(src string) (string, string, error) {
