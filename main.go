@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/arekziobrowski/sourcerer/source"
 )
 
 var input = flag.String("input", "", "input file name")
@@ -22,13 +24,13 @@ func main() {
 
 	*/
 
-	sources := ReadList("./example_list.txt")
+	/*sources := ReadList("./example_list.txt")
 	fmt.Println(sources)
 	downloader := New("/Users/arek/test", false, false)
 
 	err := downloader.GetSources(sources)
-	fmt.Println(err)
-	/*git := source.NewSystemGitDownloader("/Users/arek/test")
-	err := git.Get("git@github.com:go-git/go-billy.git d62fe84467b62d39c6082ecb621c15771e2de9d9")
 	fmt.Println(err)*/
+	git := source.NewGitDownloader("/Users/arek/test")
+	err := git.Get("git@github.com:go-git/go-billy.git b7915672824f201cb49dc8305454faf5ab946ac3")
+	fmt.Println(err)
 }
