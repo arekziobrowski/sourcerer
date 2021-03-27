@@ -2,9 +2,7 @@ package source
 
 import (
 	"bytes"
-	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -12,17 +10,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-type GitDownloader struct {
+type SystemGitDownloader struct {
 	workingDirectory string
 }
 
-func NewSystemGitDownloader(wd string) *GitDownloader {
-	return &GitDownloader{
+func NewSystemGitDownloader(wd string) *SystemGitDownloader {
+	return &SystemGitDownloader{
 		workingDirectory: wd,
 	}
 }
 
-func (g *GitDownloader) Get(src string) error {
+func (g *SystemGitDownloader) Get(src string) error {
 	const remoteName = "origin"
 	origin, hash, perr := extractOriginAndHash(src)
 	if perr != nil {
@@ -32,13 +30,13 @@ func (g *GitDownloader) Get(src string) error {
 	org, repoName := extractOrganizationAndRepo(origin)
 	destinationDir := filepath.Join(g.workingDirectory, org, repoName)
 
-	perr = g.prepare(destinationDir)
+	perr = prepare(destinationDir)
 	if perr != nil {
 		return errors.Wrapf(perr, "unable to prepare the directory tree for %q", destinationDir)
 	}
 
 	var err error
-	defer g.cleanUpIfError(err, destinationDir)
+	defer cleanUpIfError(err, destinationDir)
 
 	err = g.initialize(destinationDir)
 	if err != nil {
@@ -63,32 +61,19 @@ func (g *GitDownloader) Get(src string) error {
 	return nil
 }
 
-func (g *GitDownloader) prepare(path string) error {
-	return os.MkdirAll(path, 0777)
-}
-
-func (g *GitDownloader) cleanUpIfError(err error, dir string) error {
-	if err != nil {
-		fmt.Println("removing", dir)
-		return nil
-		//return os.RemoveAll(dir)
-	}
-	return nil
-}
-
-func (g *GitDownloader) initialize(wd string) error {
+func (g *SystemGitDownloader) initialize(wd string) error {
 	return run(wd, "git", "init")
 }
 
-func (g *GitDownloader) remoteAdd(originName, remote, wd string) error {
+func (g *SystemGitDownloader) remoteAdd(originName, remote, wd string) error {
 	return run(wd, "git", "remote", "add", originName, remote)
 }
 
-func (g *GitDownloader) fetch(originName, hash, wd string) error {
+func (g *SystemGitDownloader) fetch(originName, hash, wd string) error {
 	return run(wd, "git", "fetch", originName, hash, "--depth=1")
 }
 
-func (g *GitDownloader) reset(wd string) error {
+func (g *SystemGitDownloader) reset(wd string) error {
 	return run(wd, "git", "reset", "FETCH_HEAD", "--hard")
 }
 
@@ -103,18 +88,4 @@ func run(wd, command string, args ...string) error {
 		return err
 	}
 	return nil
-}
-
-func extractOriginAndHash(src string) (string, string, error) {
-	split := strings.Split(src, " ")
-	if len(split) != 2 {
-		return "", "", errors.Errorf("invalid origin and hash definition: %s", src)
-	}
-	return split[0], split[1], nil
-}
-
-func extractOrganizationAndRepo(origin string) (string, string) {
-	organizationAndRepo := strings.TrimSuffix(strings.Split(origin, ":")[1], ".git")
-	split := strings.Split(organizationAndRepo, "/")
-	return split[0], split[1]
 }

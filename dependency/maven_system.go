@@ -1,15 +1,15 @@
 package dependency
 
-type MavenDownloader struct {
+type SystemMavenDownloader struct {
 	workingDirectory string
 }
 
-func NewSystemMavenDownloader(wd string) *MavenDownloader {
-	return &MavenDownloader{
+func NewSystemMavenDownloader(wd string) *SystemMavenDownloader {
+	return &SystemMavenDownloader{
 		workingDirectory: wd,
 	}
 }
 
-func (g *MavenDownloader) Get(src string) error {
+func (g *SystemMavenDownloader) Get(src string) error {
 	panic("implement me")
 }

@@ -1,15 +1,36 @@
 package source
 
 import (
-	"io/ioutil"
+	"fmt"
+	"os"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
-func ReadList(filename string) []string {
-	fileBB, err := ioutil.ReadFile(filename)
-	if err != nil {
-		panic(err)
+func extractOriginAndHash(src string) (string, string, error) {
+	split := strings.Split(src, " ")
+	if len(split) != 2 {
+		return "", "", errors.Errorf("invalid origin and hash definition: %s", src)
 	}
-	contents := string(fileBB)
-	return strings.Split(contents, "\n")
+	return split[0], split[1], nil
+}
+
+func extractOrganizationAndRepo(origin string) (string, string) {
+	organizationAndRepo := strings.TrimSuffix(strings.Split(origin, ":")[1], ".git")
+	split := strings.Split(organizationAndRepo, "/")
+	return split[0], split[1]
+}
+
+func prepare(path string) error {
+	return os.MkdirAll(path, 0777)
+}
+
+func cleanUpIfError(err error, dir string) error {
+	if err != nil {
+		fmt.Println("removing", dir)
+		return nil
+		//return os.RemoveAll(dir)
+	}
+	return nil
 }

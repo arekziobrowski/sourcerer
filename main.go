@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-
-	"github.com/arekziobrowski/sourcerer/source"
 )
 
 var input = flag.String("input", "", "input file name")
@@ -24,7 +22,7 @@ func main() {
 
 	*/
 
-	sources := source.ReadList("./example_list.txt")
+	sources := ReadList("./example_list.txt")
 	fmt.Println(sources)
 	downloader := New("/Users/arek/test", false, false)
 
