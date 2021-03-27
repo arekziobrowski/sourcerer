@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/osfs"
@@ -70,9 +71,14 @@ func (g *GitDownloader) Get(src string) error {
 
 	sshAuth := getSshKeyAuth()
 
+	branch, err := getDefaultBranchName(remote)
+	if err != nil {
+		return err
+	}
+
 	// get default branch https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch then use as master here
 	// check git config --get uploadpack.allowReachableSHA1InWant https://github.com/src-d/go-git/issues/628
-	refSpec := config.RefSpec(fmt.Sprintf("%v:%v", hash, "refs/remotes/origin/master"))
+	refSpec := config.RefSpec(fmt.Sprintf("%v:%v", hash, strings.Join([]string{"refs/remotes", remoteName, branch}, "/")))
 	err = remote.Fetch(&git.FetchOptions{
 		RemoteName: remoteName,
 		Depth:      1,
@@ -104,7 +110,7 @@ func (g *GitDownloader) Get(src string) error {
 		return errors.Wrap(err, "cannot resolve revision")
 	}
 
-	err = createHeadRef(fs, "master")
+	err = createHeadRef(fs, branch)
 	if err != nil {
 		return err
 	}
@@ -118,6 +124,20 @@ func (g *GitDownloader) Get(src string) error {
 		return errors.Wrap(err, "failed to invoke 'git reset --hard FETCH_HEAD'")
 	}
 	return nil
+}
+
+func getDefaultBranchName(remote *git.Remote) (string, error) {
+	refs, err := remote.List(&git.ListOptions{Auth: getSshKeyAuth()})
+	if err != nil {
+		return "", errors.Wrap(err, "cannot invoke ls-remote")
+	}
+	for _, ref := range refs {
+		if ref.Name() == "HEAD" {
+			target := strings.Split(ref.Target().String(), "/")
+			return target[len(target)-1], nil
+		}
+	}
+	return "", errors.New("cannot find a HEAD reference in remote references list")
 }
 
 func createHeadRef(fs billy.Filesystem, refName string) error {
