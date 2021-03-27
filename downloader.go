@@ -1,10 +1,12 @@
-package source
+package main
 
 import (
 	"context"
 	"fmt"
 	"log"
 
+	"github.com/arekziobrowski/sourcerer/dependency"
+	"github.com/arekziobrowski/sourcerer/source"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -22,8 +24,8 @@ type service struct {
 
 func New(dst string, withDependencies bool, strict bool) *service {
 	return &service{
-		sourceDownloader:     NewGitDownloader(dst),
-		dependencyDownloader: NewMavenDownloader(dst),
+		sourceDownloader:     source.NewSystemGitDownloader(dst),
+		dependencyDownloader: dependency.NewSystemMavenDownloader(dst),
 		destinationDir:       dst,
 		withDependencies:     withDependencies,
 		strict:               strict,
@@ -48,8 +50,4 @@ func (s *service) GetSources(list []string) error {
 		return err
 	}
 	return nil
-}
-
-func downloadDependency() {
-
 }

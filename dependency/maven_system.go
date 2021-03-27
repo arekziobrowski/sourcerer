@@ -1,10 +1,10 @@
-package source
+package dependency
 
 type MavenDownloader struct {
 	workingDirectory string
 }
 
-func NewMavenDownloader(wd string) *MavenDownloader {
+func NewSystemMavenDownloader(wd string) *MavenDownloader {
 	return &MavenDownloader{
 		workingDirectory: wd,
 	}

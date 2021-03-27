@@ -26,11 +26,11 @@ func main() {
 
 	sources := source.ReadList("./example_list.txt")
 	fmt.Println(sources)
-	downloader := source.New("/Users/arek/test", false, false)
+	downloader := New("/Users/arek/test", false, false)
 
 	err := downloader.GetSources(sources)
 	fmt.Println(err)
-	/*git := source.NewGitDownloader("/Users/arek/test")
+	/*git := source.NewSystemGitDownloader("/Users/arek/test")
 	err := git.Get("git@github.com:go-git/go-billy.git d62fe84467b62d39c6082ecb621c15771e2de9d9")
 	fmt.Println(err)*/
 }
