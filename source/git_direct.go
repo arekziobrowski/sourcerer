@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
@@ -28,19 +29,9 @@ func NewGitDownloader(wd string) *GitDownloader {
 	}
 }
 
-func (g *GitDownloader) Get(src string) error {
+func (g *GitDownloader) Get(src *model.Source) error {
 	const remoteName = "origin"
-	origin, hash, perr := extractOriginAndHash(src)
-	if perr != nil {
-		return perr
-	}
-	org, repoName := extractOrganizationAndRepo(origin)
-	destinationDir := filepath.Join(g.workingDirectory, org, repoName)
-
-	perr = prepare(destinationDir)
-	if perr != nil {
-		return errors.Wrapf(perr, "unable to prepare the directory tree for %q", destinationDir)
-	}
+	destinationDir := filepath.Join(g.workingDirectory, src.Organization, src.Repository)
 
 	fs := osfs.New(destinationDir)
 	dot, perr := fs.Chroot(".git")
@@ -49,11 +40,6 @@ func (g *GitDownloader) Get(src string) error {
 	}
 	storage := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
 
-	/*_, _ = git.Clone(storage, fs, &git.CloneOptions{
-		URL:  "git@github.com:go-git/go-billy.git",
-		Auth: getSshKeyAuth(),
-	})
-	fmt.Println()*/
 	repo, err := git.Init(storage, fs)
 	if err != nil {
 		return errors.Wrap(err, "failed to init repo")
@@ -61,10 +47,10 @@ func (g *GitDownloader) Get(src string) error {
 
 	remote, err := repo.CreateRemote(&config.RemoteConfig{
 		Name: remoteName,
-		URLs: []string{origin},
+		URLs: []string{src.Origin},
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to invoke 'git remote add %s %s'", remoteName, origin)
+		return errors.Wrapf(err, "failed to invoke 'git remote add %s %s'", remoteName, src.Origin)
 	}
 
 	fmt.Println(remote)
@@ -76,9 +62,7 @@ func (g *GitDownloader) Get(src string) error {
 		return err
 	}
 
-	// get default branch https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch then use as master here
-	// check git config --get uploadpack.allowReachableSHA1InWant https://github.com/src-d/go-git/issues/628
-	refSpec := config.RefSpec(fmt.Sprintf("%v:%v", hash, strings.Join([]string{"refs/remotes", remoteName, branch}, "/")))
+	refSpec := config.RefSpec(fmt.Sprintf("%v:%v", src.Hash, strings.Join([]string{"refs/remotes", remoteName, branch}, "/")))
 	err = remote.Fetch(&git.FetchOptions{
 		RemoteName: remoteName,
 		Depth:      1,
@@ -88,7 +72,7 @@ func (g *GitDownloader) Get(src string) error {
 		Auth: sshAuth,
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to invoke 'git fetch %s %s --depth=1'", remoteName, hash)
+		return errors.Wrapf(err, "failed to invoke 'git fetch %s %s --depth=1'", remoteName, src.Hash)
 	}
 
 	workTree, err := repo.Worktree()
@@ -105,7 +89,7 @@ func (g *GitDownloader) Get(src string) error {
 		return nil
 	})
 
-	h, err := repo.ResolveRevision(plumbing.Revision(hash))
+	h, err := repo.ResolveRevision(plumbing.Revision(src.Hash))
 	if err != nil {
 		return errors.Wrap(err, "cannot resolve revision")
 	}

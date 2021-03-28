@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/pkg/errors"
 )
 
@@ -20,37 +21,24 @@ func NewSystemGitDownloader(wd string) *SystemGitDownloader {
 	}
 }
 
-func (g *SystemGitDownloader) Get(src string) error {
+func (g *SystemGitDownloader) Get(src *model.Source) error {
 	const remoteName = "origin"
-	origin, hash, perr := extractOriginAndHash(src)
-	if perr != nil {
-		return perr
-	}
 
-	org, repoName := extractOrganizationAndRepo(origin)
-	destinationDir := filepath.Join(g.workingDirectory, org, repoName)
+	destinationDir := filepath.Join(g.workingDirectory, src.Organization, src.Repository)
 
-	perr = prepare(destinationDir)
-	if perr != nil {
-		return errors.Wrapf(perr, "unable to prepare the directory tree for %q", destinationDir)
-	}
-
-	var err error
-	defer cleanUpIfError(err, destinationDir)
-
-	err = g.initialize(destinationDir)
+	err := g.initialize(destinationDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to initialize the repository: %s", src)
 	}
 
-	err = g.remoteAdd(remoteName, origin, destinationDir)
+	err = g.remoteAdd(remoteName, src.Origin, destinationDir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to add remote for %s", origin)
+		return errors.Wrapf(err, "failed to add remote for %s", src.Origin)
 	}
 
-	err = g.fetch(remoteName, hash, destinationDir)
+	err = g.fetch(remoteName, src.Hash, destinationDir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch from remote for revision: %s", hash)
+		return errors.Wrapf(err, "failed to fetch from remote for revision: %s", src.Hash)
 	}
 
 	err = g.reset(destinationDir)
