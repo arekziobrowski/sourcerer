@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/arekziobrowski/sourcerer/source"
 )
 
@@ -31,6 +32,11 @@ func main() {
 	err := downloader.GetSources(sources)
 	fmt.Println(err)*/
 	git := source.NewGitDownloader("/Users/arek/test")
-	err := git.Get("git@github.com:go-git/go-billy.git b7915672824f201cb49dc8305454faf5ab946ac3")
+	err := git.Get(&model.Source{
+		Origin:       "git@github.com:go-git/go-billy.git",
+		Hash:         "b7915672824f201cb49dc8305454faf5ab946ac3",
+		Organization: "go-git",
+		Repository:   "go-billy",
+	})
 	fmt.Println(err)
 }

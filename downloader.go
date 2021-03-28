@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/arekziobrowski/sourcerer/source"
@@ -51,22 +52,29 @@ func New(srcs []*model.Source, dir string, withDependencies bool, strict bool) *
 }
 
 func (s *service) GetSources() error {
+	var mutex sync.Mutex
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, src := range s.sources {
 		src := src
 		eg.Go(func() error {
 			log.Println("Downloading", src)
-			wd := filepath.Join(s.rootDir, src.Organization, src.Repository)
+			wd := filepath.Join(s.rootDir, src.Organization, src.Repository+"-"+src.Hash)
+
+			// We need to sync the preparation of directory tree, because the directory tree is nested
+			// and two goroutines may try to create the same parent dir.
+			mutex.Lock()
 			if err := prepareDirectoryTree(wd); err != nil {
 				return err
 			}
+			mutex.Unlock()
+
 			downloader := s.createSourceDownloader(wd)
 			if err := downloader.Get(src); err != nil {
 				cleanupErr := cleanUpDirectoryTree(wd)
 				if cleanupErr != nil {
 					return errors.Wrapf(err, "error occurred when cleaning up directory: %v", cleanupErr)
 				}
-				return err
+				return errors.Wrapf(err, "error while parsing: %s", fmt.Sprintf("%s/%s@%s", src.Organization, src.Repository, src.Hash))
 			}
 			return nil
 		})

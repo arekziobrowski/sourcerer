@@ -32,9 +32,9 @@ func (g *GitDownloader) Get(src *model.Source) error {
 	const remoteName = "origin"
 
 	fs := osfs.New(g.workingDirectory)
-	dot, perr := fs.Chroot(".git")
-	if perr != nil {
-		return errors.Wrap(perr, "cannot create a .git directory")
+	dot, err := fs.Chroot(".git")
+	if err != nil {
+		return errors.Wrap(err, "cannot create a .git directory")
 	}
 	storage := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
 
