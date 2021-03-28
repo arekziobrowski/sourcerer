@@ -92,7 +92,7 @@ func (g *GitDownloader) Get(src *model.Source) error {
 	})
 
 	if err != nil {
-		return errors.Wrap(err, "failed to invoke 'git reset --hard FETCH_HEAD'")
+		return errors.Wrap(err, "failed to invoke 'git reset --hard SHA1'")
 	}
 	return nil
 }
