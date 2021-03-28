@@ -2,7 +2,7 @@
 ![test workflow](https://github.com/arekziobrowski/sourcerer/actions/workflows/test.yml/badge.svg)
 
 
-Git-versioned source code and Maven dependency download.
+Git-versioned source code download.
 
 # Source code download
 Currently, only Git-versioned source code download is supported.
