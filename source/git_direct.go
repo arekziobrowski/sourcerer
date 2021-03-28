@@ -3,7 +3,6 @@ package source
 import (
 	"fmt"
 	"os/user"
-	"path/filepath"
 	"strings"
 
 	"github.com/arekziobrowski/sourcerer/model"
@@ -31,9 +30,8 @@ func NewGitDownloader(wd string) *GitDownloader {
 
 func (g *GitDownloader) Get(src *model.Source) error {
 	const remoteName = "origin"
-	destinationDir := filepath.Join(g.workingDirectory, src.Organization, src.Repository)
 
-	fs := osfs.New(destinationDir)
+	fs := osfs.New(g.workingDirectory)
 	dot, perr := fs.Chroot(".git")
 	if perr != nil {
 		return errors.Wrap(perr, "cannot create a .git directory")
