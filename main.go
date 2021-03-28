@@ -34,7 +34,7 @@ func main() {
 
 	err := downloader.GetSources()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Error while downloading sources: %v", err)
 		os.Exit(1)
 	}
 }
