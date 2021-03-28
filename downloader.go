@@ -40,10 +40,10 @@ type service struct {
 	strict                   bool
 }
 
-func New(srcs []*model.Source, dir string, withDependencies bool, strict bool) *service {
+func New(srcs []*model.Source, dir string, srcDownloaderType SourceDownloaderType, withDependencies bool, strict bool) *service {
 	return &service{
 		sources:                  srcs,
-		sourceDownloaderType:     GitDirect,
+		sourceDownloaderType:     srcDownloaderType,
 		dependencyDownloaderType: MavenSystem,
 		rootDir:                  dir,
 		withDependencies:         withDependencies,
