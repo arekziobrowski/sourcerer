@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/arekziobrowski/sourcerer/source"
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -53,10 +56,16 @@ func (s *service) GetSources() error {
 		src := src
 		eg.Go(func() error {
 			log.Println("Downloading", src)
-			// TODO: prepare directory tree
-			downloader := s.createSourceDownloader(src)
-			err := downloader.Get(src)
-			if err != nil {
+			wd := filepath.Join(s.rootDir, src.Organization, src.Repository)
+			if err := prepareDirectoryTree(wd); err != nil {
+				return err
+			}
+			downloader := s.createSourceDownloader(wd)
+			if err := downloader.Get(src); err != nil {
+				cleanupErr := cleanUpDirectoryTree(wd)
+				if cleanupErr != nil {
+					return errors.Wrapf(err, "error occurred when cleaning up directory: %v", cleanupErr)
+				}
 				return err
 			}
 			return nil
@@ -68,8 +77,7 @@ func (s *service) GetSources() error {
 	return nil
 }
 
-func (s *service) createSourceDownloader(src *model.Source) Downloader {
-	wd := filepath.Join(s.rootDir, src.Organization, src.Repository)
+func (s *service) createSourceDownloader(wd string) Downloader {
 	switch s.sourceDownloaderType {
 	case GitDirect:
 		return source.NewGitDownloader(wd)
@@ -78,4 +86,14 @@ func (s *service) createSourceDownloader(src *model.Source) Downloader {
 	default:
 		return source.NewSystemGitDownloader(wd)
 	}
+}
+
+func prepareDirectoryTree(path string) error {
+	return os.MkdirAll(path, 0777)
+}
+
+func cleanUpDirectoryTree(dir string) error {
+	fmt.Println("Removing", dir)
+	//return os.RemoveAll(dir)
+	return nil
 }
