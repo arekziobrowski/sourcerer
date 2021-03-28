@@ -51,8 +51,6 @@ func (g *GitDownloader) Get(src *model.Source) error {
 		return errors.Wrapf(err, "failed to invoke 'git remote add %s %s'", remoteName, src.Origin)
 	}
 
-	fmt.Println(remote)
-
 	sshAuth := getSshKeyAuth()
 
 	branch, err := getDefaultBranchName(remote)
@@ -77,15 +75,6 @@ func (g *GitDownloader) Get(src *model.Source) error {
 	if err != nil {
 		return err
 	}
-
-	refs, _ := repo.References()
-	refs.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Type() == plumbing.HashReference {
-			fmt.Println(ref)
-		}
-
-		return nil
-	})
 
 	h, err := repo.ResolveRevision(plumbing.Revision(src.Hash))
 	if err != nil {

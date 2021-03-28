@@ -2,12 +2,12 @@ package source
 
 import (
 	"bytes"
-	"log"
 	"os/exec"
 	"strings"
 
 	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type SystemGitDownloader struct {

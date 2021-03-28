@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -11,6 +10,7 @@ import (
 	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/arekziobrowski/sourcerer/source"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -57,7 +57,7 @@ func (s *service) GetSources() error {
 	for _, src := range s.sources {
 		src := src
 		eg.Go(func() error {
-			log.Println("Downloading", src)
+			log.Infof("Downloading %s-%s", src.Origin, src.Hash)
 			wd := filepath.Join(s.rootDir, src.Organization, src.Repository+"-"+src.Hash)
 
 			// We need to sync the preparation of directory tree, because the directory tree is nested
@@ -70,12 +70,13 @@ func (s *service) GetSources() error {
 
 			downloader := s.createSourceDownloader(wd)
 			if err := downloader.Get(src); err != nil {
-				cleanupErr := cleanUpDirectoryTree(wd)
-				if cleanupErr != nil {
-					return errors.Wrapf(err, "error occurred when cleaning up directory: %v", cleanupErr)
+				err = errors.Wrapf(err, "error while parsing: %s", fmt.Sprintf("%s@%s", src.Origin, src.Hash))
+				if s.strict {
+					return err
 				}
-				return errors.Wrapf(err, "error while parsing: %s", fmt.Sprintf("%s/%s@%s", src.Organization, src.Repository, src.Hash))
+				log.Error(err)
 			}
+			log.Infof("Finished downloading for: %s-%s", src.Origin, src.Hash)
 			return nil
 		})
 	}
@@ -97,11 +98,6 @@ func (s *service) createSourceDownloader(wd string) Downloader {
 }
 
 func prepareDirectoryTree(path string) error {
+	log.Infof("Creating directory: %s", path)
 	return os.MkdirAll(path, 0777)
-}
-
-func cleanUpDirectoryTree(dir string) error {
-	fmt.Println("Removing", dir)
-	//return os.RemoveAll(dir)
-	return nil
 }
