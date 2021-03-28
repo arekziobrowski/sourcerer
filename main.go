@@ -54,6 +54,6 @@ func getSourceDownloaderType(s string) SourceDownloaderType {
 	case gitSystem:
 		return GitSystem
 	default:
-		return GitDirect
+		return GitSystem
 	}
 }
