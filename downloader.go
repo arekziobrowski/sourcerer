@@ -74,7 +74,7 @@ func (s *service) GetSources() error {
 				if s.strict {
 					return err
 				}
-				log.Error(err)
+				log.Errorf("Error occured: %v", err)
 			}
 			log.Infof("Finished downloading for: %s-%s", src.Origin, src.Hash)
 			return nil
