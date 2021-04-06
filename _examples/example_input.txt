@@ -1,0 +1,6 @@
+git@github.com:go-git/go-billy.git d62fe84467b62d39c6082ecb621c15771e2de9d9
+git@github.com:kubernetes-client/java.git 0e596bbf2f6bfb18848e0bb5bd94064269dab483
+git@github.com:kubernetes/kubernetes.git 9c9af69ea60519b610a70261fb1b8bb81a2a5d04
+git@github.com:grafana/grafana.git 6a97236b7abd4ca2e074b4ec2549ea417ed05b1c
+git@github.com:brave/brave-browser.git 6de065fe9cf8e5b578288641434876bd6cd87d0a
+git@github.com:apache/hadoop.git 1fed18bb2d8ac3dbaecc3feddded30bed918d556

@@ -15,3 +15,10 @@ git remote add origin git@github.com:<ORGANIZATION>/<REPO>.git
 git fetch origin <SHA1> --depth=1
 git reset --hard FETCH_HEAD
 ```
+
+# Input file format
+Input list should be structured in the following manner:
+```shell
+git@github.com:org/repo-name-1.git <revision hash>
+git@github.com:org/repo-name-2.git <revision hash>
+```
