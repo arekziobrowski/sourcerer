@@ -41,24 +41,38 @@ type Project struct {
 }
 
 type ProjectBuild struct {
-	SourceDirectory       string                   `xml:"sourceDirectory,omitempty"`
-	ScriptSourceDirectory string                   `xml:"scriptSourceDirectory,omitempty"`
-	TestSourceDirectory   string                   `xml:"testSourceDirectory,omitempty"`
-	OutputDirectory       string                   `xml:"outputDirectory,omitempty"`
-	TestOutputDirectory   string                   `xml:"testOutputDirectory,omitempty"`
-	Extensions            *Extensions              `xml:"extensions,omitempty"`
-	DefaultGoal           string                   `xml:"defaultGoal,omitempty"`
-	Resources             *Resources               `xml:"resources,omitempty"`
-	TestResources         *TestResources           `xml:"testResources,omitempty"`
-	Directory             string                   `xml:"directory,omitempty"`
-	FinalName             string                   `xml:"finalName,omitempty"`
-	Filters               string                   `xml:"filters,omitempty"`
-	PluginManagement      *PluginManagement        `xml:"pluginManagement,omitempty"`
-	Plugins               *PluginManagementPlugins `xml:"plugins,omitempty"`
+	SourceDirectory       string            `xml:"sourceDirectory,omitempty"`
+	ScriptSourceDirectory string            `xml:"scriptSourceDirectory,omitempty"`
+	TestSourceDirectory   string            `xml:"testSourceDirectory,omitempty"`
+	OutputDirectory       string            `xml:"outputDirectory,omitempty"`
+	TestOutputDirectory   string            `xml:"testOutputDirectory,omitempty"`
+	Extensions            *Extensions       `xml:"extensions,omitempty"`
+	DefaultGoal           string            `xml:"defaultGoal,omitempty"`
+	Resources             *Resources        `xml:"resources,omitempty"`
+	TestResources         *TestResources    `xml:"testResources,omitempty"`
+	Directory             string            `xml:"directory,omitempty"`
+	FinalName             string            `xml:"finalName,omitempty"`
+	Filters               string            `xml:"filters,omitempty"`
+	PluginManagement      *PluginManagement `xml:"pluginManagement,omitempty"`
+	Plugins               *Plugins          `xml:"plugins,omitempty"`
+}
+
+func (m *Project) GetBuild() *ProjectBuild {
+	if m != nil {
+		return m.Build
+	}
+	return nil
+}
+
+func (m *Project) GetProfiles() *Profiles {
+	if m != nil {
+		return m.Profiles
+	}
+	return nil
 }
 
 type Extensions struct {
-	Extension *Parent `xml:"extension,omitempty"`
+	Extension []*Parent `xml:"extension,omitempty"`
 }
 
 type Parent struct {
@@ -70,11 +84,25 @@ type Parent struct {
 }
 
 type PluginManagement struct {
-	Plugins *PluginManagementPlugins `xml:"plugins,omitempty"`
+	Plugins *Plugins `xml:"plugins,omitempty"`
 }
 
-type PluginManagementPlugins struct {
-	Plugin *Plugin `xml:"plugin,omitempty"`
+func (m *PluginManagement) GetPlugins() *Plugins {
+	if m != nil {
+		return m.Plugins
+	}
+	return nil
+}
+
+type Plugins struct {
+	Plugin []*Plugin `xml:"plugin,omitempty"`
+}
+
+func (m *ProjectBuild) GetPlugins() *Plugins {
+	if m != nil {
+		return m.Plugins
+	}
+	return nil
 }
 
 type Plugin struct {
@@ -89,8 +117,15 @@ type Plugin struct {
 	Configuration string        `xml:"configuration,omitempty"`
 }
 
+func (m *Plugins) GetPluginSlice() []*Plugin {
+	if m != nil {
+		return m.Plugin
+	}
+	return nil
+}
+
 type Dependencies struct {
-	Dependency *Dependency `xml:"dependency,omitempty"`
+	Dependency []*Dependency `xml:"dependency,omitempty"`
 }
 
 type Dependency struct {
@@ -106,7 +141,7 @@ type Dependency struct {
 }
 
 type Exclusions struct {
-	Exclusion *Exclusion `xml:"exclusion,omitempty"`
+	Exclusion []*Exclusion `xml:"exclusion,omitempty"`
 }
 
 type Exclusion struct {
@@ -115,7 +150,7 @@ type Exclusion struct {
 }
 
 type Executions struct {
-	Execution *Execution `xml:"execution,omitempty"`
+	Execution []*Execution `xml:"execution,omitempty"`
 }
 
 type Execution struct {
@@ -127,7 +162,7 @@ type Execution struct {
 }
 
 type Resources struct {
-	Resource *Resource `xml:"resource,omitempty"`
+	Resource []*Resource `xml:"resource,omitempty"`
 }
 
 type Resource struct {
@@ -139,7 +174,7 @@ type Resource struct {
 }
 
 type TestResources struct {
-	TestResource *Resource `xml:"testResource,omitempty"`
+	TestResource []*Resource `xml:"testResource,omitempty"`
 }
 
 type CiManagement struct {
@@ -149,7 +184,7 @@ type CiManagement struct {
 }
 
 type Notifiers struct {
-	Notifier *Notifier `xml:"notifier,omitempty"`
+	Notifier []*Notifier `xml:"notifier,omitempty"`
 }
 
 type Notifier struct {
@@ -163,11 +198,11 @@ type Notifier struct {
 }
 
 type Properties struct {
-	Key string `xml:"key,omitempty"`
+	Key []string `xml:"key,omitempty"`
 }
 
 type Contributors struct {
-	Contributor *Contributor `xml:"contributor,omitempty"`
+	Contributor []*Contributor `xml:"contributor,omitempty"`
 }
 
 type Contributor struct {
@@ -187,7 +222,7 @@ type DependencyManagement struct {
 }
 
 type Developers struct {
-	Developer *Contributor `xml:"developer,omitempty"`
+	Developer []*Contributor `xml:"developer,omitempty"`
 }
 
 type DistributionManagement struct {
@@ -227,7 +262,7 @@ type IssueManagement struct {
 }
 
 type Licenses struct {
-	License *License `xml:"license,omitempty"`
+	License []*License `xml:"license,omitempty"`
 }
 
 type License struct {
@@ -238,7 +273,7 @@ type License struct {
 }
 
 type MailingLists struct {
-	MailingList *MailingList `xml:"mailingList,omitempty"`
+	MailingList []*MailingList `xml:"mailingList,omitempty"`
 }
 
 type MailingList struct {
@@ -256,7 +291,7 @@ type Organization struct {
 }
 
 type PluginRepositories struct {
-	PluginRepository *Repository `xml:"pluginRepository,omitempty"`
+	PluginRepository []*Repository `xml:"pluginRepository,omitempty"`
 }
 
 type Prerequisites struct {
@@ -264,7 +299,14 @@ type Prerequisites struct {
 }
 
 type Profiles struct {
-	Profile *Profile `xml:"profile,omitempty"`
+	Profile []*Profile `xml:"profile,omitempty"`
+}
+
+func (m *Profiles) GetProfileSlice() []*Profile {
+	if m != nil {
+		return m.Profile
+	}
+	return nil
 }
 
 type Profile struct {
@@ -280,6 +322,13 @@ type Profile struct {
 	PluginRepositories     *PluginRepositories     `xml:"pluginRepositories,omitempty"`
 	Reports                string                  `xml:"reports,omitempty"`
 	Reporting              *Reporting              `xml:"reporting,omitempty"`
+}
+
+func (m *Profile) GetBuild() *ProfileBuild {
+	if m != nil {
+		return m.Build
+	}
+	return nil
 }
 
 type Activation struct {
@@ -308,14 +357,21 @@ type Property struct {
 }
 
 type ProfileBuild struct {
-	DefaultGoal      string                   `xml:"defaultGoal,omitempty"`
-	Resources        *Resources               `xml:"resources,omitempty"`
-	TestResources    *TestResources           `xml:"testResources,omitempty"`
-	Directory        string                   `xml:"directory,omitempty"`
-	FinalName        string                   `xml:"finalName,omitempty"`
-	Filters          string                   `xml:"filters,omitempty"`
-	PluginManagement *PluginManagement        `xml:"pluginManagement,omitempty"`
-	Plugins          *PluginManagementPlugins `xml:"plugins,omitempty"`
+	DefaultGoal      string            `xml:"defaultGoal,omitempty"`
+	Resources        *Resources        `xml:"resources,omitempty"`
+	TestResources    *TestResources    `xml:"testResources,omitempty"`
+	Directory        string            `xml:"directory,omitempty"`
+	FinalName        string            `xml:"finalName,omitempty"`
+	Filters          string            `xml:"filters,omitempty"`
+	PluginManagement *PluginManagement `xml:"pluginManagement,omitempty"`
+	Plugins          *Plugins          `xml:"plugins,omitempty"`
+}
+
+func (m *ProfileBuild) GetPluginManagement() *PluginManagement {
+	if m != nil {
+		return m.PluginManagement
+	}
+	return nil
 }
 
 type Reporting struct {
@@ -325,7 +381,7 @@ type Reporting struct {
 }
 
 type ReportingPlugins struct {
-	Plugin *ReportingPlugin `xml:"plugin,omitempty"`
+	Plugin []*ReportingPlugin `xml:"plugin,omitempty"`
 }
 
 type ReportingPlugin struct {
@@ -338,7 +394,7 @@ type ReportingPlugin struct {
 }
 
 type ReportSets struct {
-	ReportSet *ReportSet `xml:"reportSet,omitempty"`
+	ReportSet []*ReportSet `xml:"reportSet,omitempty"`
 }
 
 type ReportSet struct {
@@ -349,7 +405,7 @@ type ReportSet struct {
 }
 
 type Repositories struct {
-	Repository *Repository `xml:"repository,omitempty"`
+	Repository []*Repository `xml:"repository,omitempty"`
 }
 
 type SCM struct {
