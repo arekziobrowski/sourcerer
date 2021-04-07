@@ -35,8 +35,6 @@ func NewSystemMavenDownloader(wd string) *SystemMavenDownloader {
 
 func (m *SystemMavenDownloader) Get() error {
 	in := filepath.Join(m.workingDirectory, pomName)
-	log.Infof("Downloading dependencies to %s", filepath.Join(m.workingDirectory, dependencyDir))
-
 	f, err := os.Open(in)
 	if os.IsNotExist(err) {
 		log.Warnf("There is no %s", in)
@@ -46,6 +44,8 @@ func (m *SystemMavenDownloader) Get() error {
 		return errors.Wrapf(err, "failed to open %s", in)
 	}
 	defer f.Close()
+
+	log.Infof("Downloading dependencies to %s", filepath.Join(m.workingDirectory, dependencyDir))
 
 	byteValue, err := ioutil.ReadAll(f)
 	if err != nil {
