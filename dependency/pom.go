@@ -4,6 +4,13 @@ type Pom struct {
 	Project *Project `xml:"project,omitempty"`
 }
 
+func (m *Pom) GetProject() *Project {
+	if m != nil {
+		return m.Project
+	}
+	return nil
+}
+
 type Project struct {
 	ModelVersion           string                  `xml:"modelVersion,omitempty"`
 	Parent                 *Parent                 `xml:"parent,omitempty"`
@@ -40,6 +47,20 @@ type Project struct {
 	XsiSchemaLocation      string                  `xml:"_xsi:schemaLocation,omitempty"`
 }
 
+func (m *Project) GetBuild() *ProjectBuild {
+	if m != nil {
+		return m.Build
+	}
+	return nil
+}
+
+func (m *Project) GetProfiles() *Profiles {
+	if m != nil {
+		return m.Profiles
+	}
+	return nil
+}
+
 type ProjectBuild struct {
 	SourceDirectory       string            `xml:"sourceDirectory,omitempty"`
 	ScriptSourceDirectory string            `xml:"scriptSourceDirectory,omitempty"`
@@ -57,16 +78,16 @@ type ProjectBuild struct {
 	Plugins               *Plugins          `xml:"plugins,omitempty"`
 }
 
-func (m *Project) GetBuild() *ProjectBuild {
+func (m *ProjectBuild) GetPlugins() *Plugins {
 	if m != nil {
-		return m.Build
+		return m.Plugins
 	}
 	return nil
 }
 
-func (m *Project) GetProfiles() *Profiles {
+func (m *ProjectBuild) GetPluginManagement() *PluginManagement {
 	if m != nil {
-		return m.Profiles
+		return m.PluginManagement
 	}
 	return nil
 }
@@ -96,13 +117,6 @@ func (m *PluginManagement) GetPlugins() *Plugins {
 
 type Plugins struct {
 	Plugin []*Plugin `xml:"plugin,omitempty"`
-}
-
-func (m *ProjectBuild) GetPlugins() *Plugins {
-	if m != nil {
-		return m.Plugins
-	}
-	return nil
 }
 
 type Plugin struct {
@@ -370,6 +384,13 @@ type ProfileBuild struct {
 func (m *ProfileBuild) GetPluginManagement() *PluginManagement {
 	if m != nil {
 		return m.PluginManagement
+	}
+	return nil
+}
+
+func (m *ProfileBuild) GetPlugins() *Plugins {
+	if m != nil {
+		return m.Plugins
 	}
 	return nil
 }
