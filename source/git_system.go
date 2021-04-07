@@ -22,6 +22,7 @@ func NewSystemGitDownloader(wd string) *SystemGitDownloader {
 
 func (g *SystemGitDownloader) Get(src *model.Source) error {
 	const remoteName = "origin"
+	log.Infof("Downloading %s-%s", src.Origin, src.Hash)
 
 	err := g.initialize()
 	if err != nil {
@@ -42,6 +43,8 @@ func (g *SystemGitDownloader) Get(src *model.Source) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to reset to FETCH_HEAD")
 	}
+
+	log.Infof("Finished downloading for: %s-%s", src.Origin, src.Hash)
 
 	return nil
 }

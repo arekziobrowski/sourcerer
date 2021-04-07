@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/arekziobrowski/sourcerer/dependency"
 	"github.com/arekziobrowski/sourcerer/model"
 	"github.com/arekziobrowski/sourcerer/source"
 	"github.com/pkg/errors"
@@ -14,8 +15,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type Downloader interface {
+type SourceDownloader interface {
 	Get(src *model.Source) error
+}
+
+type DependencyDownloader interface {
+	Get() error
 }
 
 type SourceDownloaderType int
@@ -57,7 +62,6 @@ func (s *service) GetSources() error {
 	for _, src := range s.sources {
 		src := src
 		eg.Go(func() error {
-			log.Infof("Downloading %s-%s", src.Origin, src.Hash)
 			wd := filepath.Join(s.rootDir, src.Organization, src.Repository+"-"+src.Hash)
 
 			// We need to sync the preparation of directory tree, because the directory tree is nested
@@ -76,7 +80,11 @@ func (s *service) GetSources() error {
 				}
 				log.Errorf("Error occured: %v", err)
 			}
-			log.Infof("Finished downloading for: %s-%s", src.Origin, src.Hash)
+
+			dependencyDownloader := s.createDependencyDownloader(wd)
+			if err := dependencyDownloader.Get(); err != nil {
+				log.Errorf("Error occured: %v", err)
+			}
 			return nil
 		})
 	}
@@ -86,7 +94,7 @@ func (s *service) GetSources() error {
 	return nil
 }
 
-func (s *service) createSourceDownloader(wd string) Downloader {
+func (s *service) createSourceDownloader(wd string) SourceDownloader {
 	switch s.sourceDownloaderType {
 	case GitDirect:
 		return source.NewGitDownloader(wd)
@@ -94,6 +102,15 @@ func (s *service) createSourceDownloader(wd string) Downloader {
 		return source.NewSystemGitDownloader(wd)
 	default:
 		return source.NewSystemGitDownloader(wd)
+	}
+}
+
+func (s *service) createDependencyDownloader(wd string) DependencyDownloader {
+	switch s.dependencyDownloaderType {
+	case MavenSystem:
+		return dependency.NewSystemMavenDownloader(wd)
+	default:
+		return dependency.NewSystemMavenDownloader(wd)
 	}
 }
 
