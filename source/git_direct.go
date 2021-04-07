@@ -16,6 +16,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type GitDownloader struct {
@@ -30,6 +31,7 @@ func NewGitDownloader(wd string) *GitDownloader {
 
 func (g *GitDownloader) Get(src *model.Source) error {
 	const remoteName = "origin"
+	log.Infof("Downloading %s-%s", src.Origin, src.Hash)
 
 	fs := osfs.New(g.workingDirectory)
 	dot, err := fs.Chroot(".git")
@@ -94,6 +96,7 @@ func (g *GitDownloader) Get(src *model.Source) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to invoke 'git reset --hard SHA1'")
 	}
+	log.Infof("Finished downloading for: %s-%s", src.Origin, src.Hash)
 	return nil
 }
 

@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
+	"os"
+	"path/filepath"
 
-	"github.com/arekziobrowski/sourcerer/dependency"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,12 +20,7 @@ var strict = flag.Bool("strict", false, "use strict mode")
 var sourceDownloader = flag.String("source_downloader", git, "source downloader mode to use [git, git-system]")
 
 func main() {
-	mvn := dependency.NewSystemMavenDownloader("/Users/arek/test/arekziobrowski/JavaMetrics-b1779f98247af614ace908887a0da5e5ebfc3667")
-	err := mvn.Get("pom.xml")
-	if err != nil {
-		log.Fatal(err)
-	}
-	/*flag.Parse()
+	flag.Parse()
 
 	if *input == "" {
 		log.Errorf("Input is missing, please use --input flag to provide the input")
@@ -48,7 +44,7 @@ func main() {
 	if err != nil {
 		log.Errorf("Error while downloading sources: %v", err)
 		os.Exit(1)
-	}*/
+	}
 }
 
 func getSourceDownloaderType(s string) SourceDownloaderType {
