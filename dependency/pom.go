@@ -1,17 +1,12 @@
 package dependency
 
-type Pom struct {
-	Project *Project `xml:"project,omitempty"`
-}
-
-func (m *Pom) GetProject() *Project {
-	if m != nil {
-		return m.Project
-	}
-	return nil
-}
+import (
+	"encoding/xml"
+	"io"
+)
 
 type Project struct {
+	XMLName                xml.Name                `xml:"project"`
 	ModelVersion           string                  `xml:"modelVersion,omitempty"`
 	Parent                 *Parent                 `xml:"parent,omitempty"`
 	GroupID                string                  `xml:"groupId,omitempty"`
@@ -128,7 +123,7 @@ type Plugin struct {
 	Dependencies  *Dependencies `xml:"dependencies,omitempty"`
 	Goals         string        `xml:"goals,omitempty"`
 	Inherited     string        `xml:"inherited,omitempty"`
-	Configuration string        `xml:"configuration,omitempty"`
+	Configuration *Properties   `xml:"configuration,omitempty"`
 }
 
 func (m *Plugins) GetPluginSlice() []*Plugin {
@@ -168,11 +163,11 @@ type Executions struct {
 }
 
 type Execution struct {
-	ID            string `xml:"id,omitempty"`
-	Phase         string `xml:"phase,omitempty"`
-	Goals         string `xml:"goals,omitempty"`
-	Inherited     string `xml:"inherited,omitempty"`
-	Configuration string `xml:"configuration,omitempty"`
+	ID            string      `xml:"id,omitempty"`
+	Phase         string      `xml:"phase,omitempty"`
+	Goals         string      `xml:"goals,omitempty"`
+	Inherited     string      `xml:"inherited,omitempty"`
+	Configuration *Properties `xml:"configuration,omitempty"`
 }
 
 type Resources struct {
@@ -212,7 +207,49 @@ type Notifier struct {
 }
 
 type Properties struct {
-	Key []string `xml:"key,omitempty"`
+	Entries map[string]string
+}
+
+func (p *Properties) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	type entry struct {
+		XMLName xml.Name
+		Key     string `xml:"name,attr"`
+		Value   string `xml:",chardata"`
+	}
+	p.Entries = map[string]string{}
+	for {
+		var e entry
+
+		err := d.Decode(&e)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		p.Entries[e.XMLName.Local] = e.Value
+	}
+	return nil
+}
+
+func (p *Properties) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+
+	tokens := []xml.Token{start}
+
+	for key, value := range p.Entries {
+		t := xml.StartElement{Name: xml.Name{Local: key}}
+		tokens = append(tokens, t, xml.CharData(value), xml.EndElement{Name: t.Name})
+	}
+
+	tokens = append(tokens, xml.EndElement{Name: start.Name})
+
+	for _, t := range tokens {
+		err := e.EncodeToken(t)
+		if err != nil {
+			return err
+		}
+	}
+	return e.Flush()
 }
 
 type Contributors struct {
@@ -411,7 +448,7 @@ type ReportingPlugin struct {
 	Version       string      `xml:"version,omitempty"`
 	ReportSets    *ReportSets `xml:"reportSets,omitempty"`
 	Inherited     string      `xml:"inherited,omitempty"`
-	Configuration string      `xml:"configuration,omitempty"`
+	Configuration *Properties `xml:"configuration,omitempty"`
 }
 
 type ReportSets struct {
@@ -419,10 +456,10 @@ type ReportSets struct {
 }
 
 type ReportSet struct {
-	ID            string `xml:"id,omitempty"`
-	Reports       string `xml:"reports,omitempty"`
-	Inherited     string `xml:"inherited,omitempty"`
-	Configuration string `xml:"configuration,omitempty"`
+	ID            string      `xml:"id,omitempty"`
+	Reports       string      `xml:"reports,omitempty"`
+	Inherited     string      `xml:"inherited,omitempty"`
+	Configuration *Properties `xml:"configuration,omitempty"`
 }
 
 type Repositories struct {

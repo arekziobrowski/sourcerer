@@ -11,8 +11,10 @@ import (
 )
 
 const (
+	dependencyDir             = "${user.dir}/.sourcerer-deps"
 	mavenDependencyPluginName = "maven-dependency-plugin"
-	outFileName               = ".sourcerer_pom.xml"
+	outFileName               = ".sourcerer-pom.xml"
+	outputDirKey              = "outputDirectory"
 )
 
 type SystemMavenDownloader struct {
@@ -37,22 +39,25 @@ func (m *SystemMavenDownloader) Get(src string) error {
 	}
 	defer f.Close()
 
-	byteValue, _ := ioutil.ReadAll(f)
+	byteValue, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
 
-	var pom *Pom
-	if err := xml.Unmarshal(byteValue, pom); err != nil {
+	var pom Project
+	if err := xml.Unmarshal(byteValue, &pom); err != nil {
 		return errors.Wrapf(err, "failed to unmarshal %s", in)
 	}
 
-	overrideCopyDependenciesConfig(pom)
-	err = m.save(pom)
+	overrideCopyDependenciesConfig(&pom)
+	err = m.save(&pom)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *SystemMavenDownloader) save(pom *Pom) error {
+func (m *SystemMavenDownloader) save(pom *Project) error {
 	out := filepath.Join(m.workingDirectory, outFileName)
 	bb, err := xml.MarshalIndent(pom, "", "")
 	if err != nil {
@@ -62,14 +67,14 @@ func (m *SystemMavenDownloader) save(pom *Pom) error {
 	return nil
 }
 
-func overrideCopyDependenciesConfig(xml *Pom) {
-	overrideConfigForPlugins(xml.GetProject().GetBuild().GetPlugins().GetPluginSlice())
-	overrideConfigForPlugins(xml.GetProject().GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
+func overrideCopyDependenciesConfig(xml *Project) {
+	overrideConfigForPlugins(xml.GetBuild().GetPlugins().GetPluginSlice())
+	overrideConfigForPlugins(xml.GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
 	overrideConfigForProfiles(xml)
 }
 
-func overrideConfigForProfiles(xml *Pom) {
-	for _, profile := range xml.GetProject().GetProfiles().GetProfileSlice() {
+func overrideConfigForProfiles(xml *Project) {
+	for _, profile := range xml.GetProfiles().GetProfileSlice() {
 		overrideConfigForPlugins(profile.GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
 		overrideConfigForPlugins(profile.GetBuild().GetPlugins().GetPluginSlice())
 	}
@@ -78,7 +83,7 @@ func overrideConfigForProfiles(xml *Pom) {
 func overrideConfigForPlugins(plugins []*Plugin) {
 	for _, plugin := range plugins {
 		if plugin.ArtifactID == mavenDependencyPluginName {
-			log.Infof("Config: %s", plugin.Configuration)
+			plugin.Configuration.Entries[outputDirKey] = dependencyDir
 		}
 	}
 }
