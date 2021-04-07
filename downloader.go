@@ -81,9 +81,11 @@ func (s *service) GetSources() error {
 				log.Errorf("Error occured: %v", err)
 			}
 
-			dependencyDownloader := s.createDependencyDownloader(wd)
-			if err := dependencyDownloader.Get(); err != nil {
-				log.Errorf("Error occured: %v", err)
+			if s.withDependencies {
+				dependencyDownloader := s.createDependencyDownloader(wd)
+				if err := dependencyDownloader.Get(); err != nil {
+					log.Errorf("Error occured: %v", err)
+				}
 			}
 			return nil
 		})
