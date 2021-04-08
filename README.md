@@ -22,3 +22,5 @@ Input list should be structured in the following manner:
 git@github.com:org/repo-name-1.git <revision hash>
 git@github.com:org/repo-name-2.git <revision hash>
 ```
+# Dependency target directories
+Maven dependencies are downloaded based on `.sourcerer-pom.xml` file in the project directory. The downloaded dependency jars are placed in `.sourcerer-deps` directory.
