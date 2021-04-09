@@ -17,7 +17,7 @@ var input = flag.String("input", "", "input file name")
 var withDependencies = flag.Bool("with_dependencies", false, "download dependencies from Maven along with the sources")
 var destination = flag.String("dst", "", "directory to which the sources will be downloaded")
 var strict = flag.Bool("strict", false, "use strict mode")
-var sourceDownloader = flag.String("source_downloader", git, "source downloader mode to use [git, git-system]")
+var sourceDownloader = flag.String("source_downloader", gitSystem, "source downloader mode to use [git, git-system]")
 
 func main() {
 	flag.Parse()

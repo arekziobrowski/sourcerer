@@ -62,7 +62,7 @@ func (g *SystemGitDownloader) fetch(originName, hash string) error {
 }
 
 func (g *SystemGitDownloader) reset() error {
-	return run(g.workingDirectory, "git", "reset", "FETCH_HEAD", "--hard")
+	return run(g.workingDirectory, "git", "reset", "--hard", "FETCH_HEAD")
 }
 
 func run(wd, command string, args ...string) error {
