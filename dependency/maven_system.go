@@ -93,7 +93,7 @@ func (m *SystemMavenDownloader) download() error {
 	if runtime.GOOS == "windows" {
 		cmd = "mvn.cmd"
 	}
-	err = run(m.workingDirectory, cmd, "dependency:copy-dependencies", fmt.Sprintf("-DoutputDirectory='%s'", destDir), "-f", filepath.Join(m.workingDirectory, outFileName))
+	err = run(m.workingDirectory, cmd, "dependency:copy-dependencies", fmt.Sprintf("-DoutputDirectory=%s", destDir), "-f", filepath.Join(m.workingDirectory, outFileName))
 	if err != nil {
 		return errors.Wrapf(err, "failed to download deps to %s", destDir)
 	}
@@ -129,7 +129,9 @@ func overrideConfigForProfiles(xml *Project) {
 func overrideConfigForPlugins(plugins []*Plugin) {
 	for _, plugin := range plugins {
 		if plugin.ArtifactID == mavenDependencyPluginName {
-			plugin.Configuration.Entries[outputDirKey] = dependencyDir
+			if plugin.Configuration != nil && plugin.Configuration.Entries != nil {
+				plugin.Configuration.Entries[outputDirKey] = dependencyDir
+			}
 		}
 	}
 }

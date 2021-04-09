@@ -15,6 +15,7 @@ func ReadList(filename string) []*model.Source {
 	}
 	contents := string(fileBB)
 	lines := strings.Split(contents, "\n")
+	lines = removeDuplicates(lines)
 	out := make([]*model.Source, 0, len(lines))
 	for _, line := range lines {
 		src, err := model.ToSource(line)
@@ -22,6 +23,19 @@ func ReadList(filename string) []*model.Source {
 			log.Fatalf("Error while converting input: %v", err)
 		}
 		out = append(out, src)
+	}
+	return out
+}
+
+func removeDuplicates(list []string) []string {
+	set := make(map[string]struct{}, 0)
+	for _, s := range list {
+		set[s] = struct{}{}
+	}
+
+	var out []string
+	for k, _ := range set {
+		out = append(out, k)
 	}
 	return out
 }
