@@ -62,7 +62,7 @@ func (g *SystemGitDownloader) fetch(originName, hash string) error {
 }
 
 func (g *SystemGitDownloader) reset() error {
-	return run(g.workingDirectory, "git", "reset", "FETCH_HEAD", "--hard")
+	return run(g.workingDirectory, "git", "reset", "--hard", "FETCH_HEAD")
 }
 
 func run(wd, command string, args ...string) error {
@@ -72,7 +72,7 @@ func run(wd, command string, args ...string) error {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		log.Printf("Error occured when running %q: %s", command+" "+strings.Join(args, " "), stderr.String())
+		log.Errorf("[%s] Error occured when running %q: %s", wd, command+" "+strings.Join(args, " "), stderr.String())
 		return err
 	}
 	return nil

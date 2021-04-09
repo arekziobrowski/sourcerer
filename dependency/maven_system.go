@@ -74,7 +74,7 @@ func (m *SystemMavenDownloader) Get() error {
 
 func (m *SystemMavenDownloader) save(pom *Project) error {
 	out := filepath.Join(m.workingDirectory, outFileName)
-	bb, err := xml.MarshalIndent(pom, "", "")
+	bb, err := xml.MarshalIndent(pom, "", "\t")
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal %s", out)
 	}
@@ -93,7 +93,7 @@ func (m *SystemMavenDownloader) download() error {
 	if runtime.GOOS == "windows" {
 		cmd = "mvn.cmd"
 	}
-	err = run(m.workingDirectory, cmd, "dependency:copy-dependencies", fmt.Sprintf("-DoutputDirectory='%s'", destDir), "-f", filepath.Join(m.workingDirectory, outFileName))
+	err = run(m.workingDirectory, cmd, "dependency:copy-dependencies", fmt.Sprintf("-DoutputDirectory=%s", destDir), "-f", filepath.Join(m.workingDirectory, outFileName))
 	if err != nil {
 		return errors.Wrapf(err, "failed to download deps to %s", destDir)
 	}
@@ -107,29 +107,42 @@ func run(wd, command string, args ...string) error {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		log.Printf("Error occured when running %q: %s", command+" "+strings.Join(args, " "), stderr.String())
+		log.Errorf("Error occured when running %q: %s", command+" "+strings.Join(args, " "), stderr.String())
 		return err
 	}
 	return nil
 }
 
 func overrideCopyDependenciesConfig(xml *Project) {
-	overrideConfigForPlugins(xml.GetBuild().GetPlugins().GetPluginSlice())
-	overrideConfigForPlugins(xml.GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
+	overrideConfigForPlugins(xml.Name, xml.GetBuild().GetPlugins().GetPluginSlice())
+	overrideConfigForPlugins(xml.Name, xml.GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
 	overrideConfigForProfiles(xml)
 }
 
 func overrideConfigForProfiles(xml *Project) {
 	for _, profile := range xml.GetProfiles().GetProfileSlice() {
-		overrideConfigForPlugins(profile.GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
-		overrideConfigForPlugins(profile.GetBuild().GetPlugins().GetPluginSlice())
+		overrideConfigForPlugins(xml.Name, profile.GetBuild().GetPluginManagement().GetPlugins().GetPluginSlice())
+		overrideConfigForPlugins(xml.Name, profile.GetBuild().GetPlugins().GetPluginSlice())
 	}
 }
 
-func overrideConfigForPlugins(plugins []*Plugin) {
+func overrideConfigForPlugins(projectName string, plugins []*Plugin) {
 	for _, plugin := range plugins {
 		if plugin.ArtifactID == mavenDependencyPluginName {
-			plugin.Configuration.Entries[outputDirKey] = dependencyDir
+			log.Infof("Found maven-dependency-plugin for %s", projectName)
+			if plugin.Configuration != nil && plugin.Configuration.Entries != nil {
+				plugin.Configuration = nil
+			}
+			clearExecutions(plugin.Executions)
 		}
+	}
+}
+
+func clearExecutions(execution *Executions) {
+	if execution == nil {
+		return
+	}
+	for _, e := range execution.Execution {
+		e.Configuration = nil
 	}
 }
