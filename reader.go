@@ -34,7 +34,7 @@ func removeDuplicates(list []string) []string {
 	}
 
 	var out []string
-	for k, _ := range set {
+	for k := range set {
 		out = append(out, k)
 	}
 	return out
