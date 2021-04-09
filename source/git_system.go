@@ -72,7 +72,7 @@ func run(wd, command string, args ...string) error {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		log.Errorf("Error occured when running %q: %s", command+" "+strings.Join(args, " "), stderr.String())
+		log.Errorf("[%s] Error occured when running %q: %s", wd, command+" "+strings.Join(args, " "), stderr.String())
 		return err
 	}
 	return nil
